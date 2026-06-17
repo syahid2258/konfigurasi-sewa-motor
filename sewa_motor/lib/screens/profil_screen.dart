@@ -9,6 +9,7 @@ import 'poin_voucher_screen.dart';
 import 'bantuan_screen.dart';
 import 'tentang_aplikasi_screen.dart';
 import 'pengaturan_screen.dart';
+import 'lucky_spin_screen.dart';
 
 class ProfilScreen extends StatefulWidget {
   const ProfilScreen({super.key});
@@ -250,6 +251,7 @@ class _ProfilScreenState extends State<ProfilScreen> {
           children: [
             _buildNavItem(0, Icons.home_rounded, 'Beranda', primaryPurple),
             _buildNavItem(1, Icons.calendar_month_rounded, 'Booking', primaryPurple), 
+            _buildLuckySpinItem(),
             _buildNavItem(2, Icons.chat_bubble_outline_rounded, 'Pesan', primaryPurple),
             _buildNavItem(3, Icons.person_rounded, 'Profil', primaryPurple), // Aktif
           ],
@@ -328,7 +330,6 @@ class _ProfilScreenState extends State<ProfilScreen> {
                 context,
                 MaterialPageRoute(builder: (context) => const PesanScreen()),
               );
-            ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Buka halaman Pesan')));
           }
         },
         child: AnimatedContainer(
@@ -355,6 +356,56 @@ class _ProfilScreenState extends State<ProfilScreen> {
               ),
             ],
           ),
+        ),
+      ),
+    );
+  }
+
+  // Widget helper khusus untuk tombol Lucky Spin di tengah
+  Widget _buildLuckySpinItem() {
+    int userPoints = _user?.points ?? 0;
+    bool isPointsEnough = userPoints >= 1000; 
+    return GestureDetector(
+      onTap: () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => const LuckySpinScreen(),
+          ),
+        );
+      },
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 250),
+        curve: Curves.easeInOut,
+        color: Colors.transparent,
+        padding: const EdgeInsets.symmetric(horizontal: 12.0),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              padding: const EdgeInsets.all(6),
+              decoration: BoxDecoration(
+                color: isPointsEnough 
+                    ? const Color(0xFF7A58E6).withOpacity(0.12)
+                    : Colors.grey.shade200,
+                shape: BoxShape.circle,
+              ),
+              child: Icon(
+                isPointsEnough ? Icons.stars_rounded : Icons.lock_outline_rounded, 
+                color: isPointsEnough ? const Color(0xFF7A58E6) : Colors.grey.shade500,
+                size: 24,
+              ),
+            ),
+            const SizedBox(height: 4),
+            Text(
+              'Lucky Spin',
+              style: TextStyle(
+                fontSize: 11,
+                fontWeight: FontWeight.w500,
+                color: isPointsEnough ? const Color(0xFF2D3142) : Colors.grey.shade400,
+              ),
+            ),
+          ],
         ),
       ),
     );

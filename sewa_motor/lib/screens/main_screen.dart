@@ -41,10 +41,12 @@ class _MainScreenState extends State<MainScreen> {
       final motors = results[0] as List<dynamic>;
       final user = results[1] as Map<String, dynamic>;
       final name = user['name'] as String? ?? 'Pengguna';
+      final points = user['points'] as int? ?? 0;
       final firstName = name.split(' ').first;
       setState(() {
         _featuredMotors = motors.take(3).map((e) => Motor.fromJson(e as Map<String, dynamic>)).toList();
         _userName = firstName;
+        userPoints = points;
         _isLoadingMotors = false;
       });
     } catch (_) {

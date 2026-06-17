@@ -347,5 +347,9 @@ class DatabaseSeeder extends Seeder
         AppInfo::create(['title' => '1. Pengumpulan Data', 'content' => 'Kami mengumpulkan data pribadi Anda seperti nama, nomor telepon, alamat email, dan foto KTP untuk keperluan verifikasi keamanan.', 'type' => 'privacy']);
         AppInfo::create(['title' => '2. Penggunaan Data', 'content' => 'Data Anda digunakan secara eksklusif untuk memproses transaksi, menghubungi Anda jika terjadi keadaan darurat, dan peningkatan layanan.', 'type' => 'privacy']);
         AppInfo::create(['title' => '3. Keamanan Informasi', 'content' => 'Kami menggunakan sistem enkripsi standar industri untuk melindungi data sensitif Anda dari akses yang tidak sah.', 'type' => 'privacy']);
+
+        $this->call([
+            LuckySpinPrizeSeeder::class,
+        ]);
     }
 }

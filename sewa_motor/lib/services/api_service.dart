@@ -269,4 +269,18 @@ class ApiService {
     }
     return res;
   }
+
+  // =============================================
+  // LUCKY SPIN
+  // =============================================
+
+  static Future<Map<String, dynamic>> getLuckySpinInfo() async {
+    final res = await get('/lucky-spin/info');
+    return res['data'] as Map<String, dynamic>;
+  }
+
+  static Future<Map<String, dynamic>> doLuckySpin() async {
+    final res = await post('/lucky-spin/spin', {});
+    return res['data'] as Map<String, dynamic>;
+  }
 }

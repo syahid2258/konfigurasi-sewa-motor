@@ -5,6 +5,7 @@ import 'main_screen.dart';
 import 'tiket_screen.dart';
 import 'profil_screen.dart';
 import 'pesan_screen.dart';
+import 'lucky_spin_screen.dart';
 
 class RiwayatScreen extends StatefulWidget {
   const RiwayatScreen({super.key});
@@ -20,6 +21,7 @@ class _RiwayatScreenState extends State<RiwayatScreen> {
 
   bool _isLoading = true;
   List<Booking> _allBookings = [];
+  int userPoints = 0;
 
   @override
   void initState() {
@@ -30,9 +32,15 @@ class _RiwayatScreenState extends State<RiwayatScreen> {
   Future<void> _loadBookings() async {
     try {
       setState(() => _isLoading = true);
-      final data = await ApiService.getBookings();
+      final results = await Future.wait([
+        ApiService.getBookings(),
+        ApiService.getUser(),
+      ]);
+      final data = results[0] as List<dynamic>;
+      final user = results[1] as Map<String, dynamic>;
       setState(() {
         _allBookings = data.map((e) => Booking.fromJson(e as Map<String, dynamic>)).toList();
+        userPoints = user['points'] ?? 0;
         _isLoading = false;
       });
     } catch (e) {
@@ -203,6 +211,7 @@ class _RiwayatScreenState extends State<RiwayatScreen> {
           children: [
             _buildNavItem(0, Icons.home_rounded, 'Beranda'),
             _buildNavItem(1, Icons.calendar_month_rounded, 'Booking'), // Ini yang akan menyala
+            _buildLuckySpinItem(),
             _buildNavItem(2, Icons.chat_bubble_outline_rounded, 'Pesan'),
             _buildNavItem(3, Icons.person_outline_rounded, 'Profil'),
           ],
@@ -316,10 +325,8 @@ class _RiwayatScreenState extends State<RiwayatScreen> {
           } else if (index == 2) {
             // Navigasi ke PesanScreen
             Navigator.push(context, MaterialPageRoute(builder: (context) => const PesanScreen()));
-            ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Buka halaman Pesan')));
           } else if (index == 3) {
             Navigator.push(context, MaterialPageRoute(builder: (context) => const ProfilScreen()));
-            ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Buka halaman Profil')));
           }
         },
         child: AnimatedContainer(
@@ -350,4 +357,53 @@ class _RiwayatScreenState extends State<RiwayatScreen> {
       ),
     );
   }
-}
+
+  // Widget helper khusus untuk tombol Lucky Spin di tengah
+  Widget _buildLuckySpinItem() {
+    bool isPointsEnough = userPoints >= 1000; 
+    return GestureDetector(
+      onTap: () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => const LuckySpinScreen(),
+          ),
+        );
+      },
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 250),
+        curve: Curves.easeInOut,
+        color: Colors.transparent,
+        padding: const EdgeInsets.symmetric(horizontal: 12.0),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              padding: const EdgeInsets.all(6),
+              decoration: BoxDecoration(
+                color: isPointsEnough 
+                    ? const Color(0xFF7A58E6).withOpacity(0.12)
+                    : Colors.grey.shade200,
+                shape: BoxShape.circle,
+              ),
+              child: Icon(
+                isPointsEnough ? Icons.stars_rounded : Icons.lock_outline_rounded, 
+                color: isPointsEnough ? const Color(0xFF7A58E6) : Colors.grey.shade500,
+                size: 24,
+              ),
+            ),
+            const SizedBox(height: 4),
+            Text(
+              'Lucky Spin',
+              style: TextStyle(
+                fontSize: 11,
+                fontWeight: FontWeight.w500,
+                color: isPointsEnough ? const Color(0xFF2D3142) : Colors.grey.shade400,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}

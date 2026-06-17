@@ -1,6 +1,8 @@
 import 'dart:core';
 import 'dart:math';
 import 'package:flutter/material.dart';
+import '../models/lucky_spin_prize_model.dart';
+import '../services/api_service.dart';
 
 class LuckySpinScreen extends StatefulWidget {
   const LuckySpinScreen({super.key});
@@ -10,40 +12,60 @@ class LuckySpinScreen extends StatefulWidget {
 }
 
 class _LuckySpinScreenState extends State<LuckySpinScreen> with SingleTickerProviderStateMixin {
-  // Simulasi data poin user saat ini (nantinya bisa diintegrasikan dengan database/state management)
-  int userPoints = 1200; 
-  final int pointsRequired = 1000;
+  int userPoints = 0; 
+  int pointsRequired = 1000;
 
   late AnimationController _animationController;
   late Animation<double> _animation;
   
+  bool _isLoading = true;
   bool _isSpinning = false;
   int _selectedPrizeIndex = 0;
 
-  // Daftar hadiah istimewa yang disiapkan untuk bisnis sewa motor
-  final List<Map<String, dynamic>> _prizes = [
-    {'title': 'Gratis Sewa 1 Hari', 'icon': Icons.moped_rounded},
-    {'title': 'Diskon Sewa 50%', 'icon': Icons.percent_rounded},
-    {'title': 'Gratis Upgrade Unit', 'icon': Icons.upgrade_rounded},
-    {'title': 'Voucher Diskon Rp25k', 'icon': Icons.confirmation_number_rounded},
-    {'title': 'Gratis Helm Premium', 'icon': Icons.sports_motorsports_rounded},
-    {'title': 'Cashback 200 Poin', 'icon': Icons.stars_rounded},
-    {'title': 'Gratis Jas Hujan', 'icon': Icons.umbrella_rounded},
-    {'title': 'Coba Lagi Esok Hari', 'icon': Icons.sentiment_dissatisfied_rounded},
-  ];
+  List<LuckySpinPrize> _prizes = [];
+
+  IconData _getIconData(String iconName) {
+    switch (iconName) {
+      case 'moped_rounded': return Icons.moped_rounded;
+      case 'percent_rounded': return Icons.percent_rounded;
+      case 'upgrade_rounded': return Icons.upgrade_rounded;
+      case 'confirmation_number_rounded': return Icons.confirmation_number_rounded;
+      case 'sports_motorsports_rounded': return Icons.sports_motorsports_rounded;
+      case 'stars_rounded': return Icons.stars_rounded;
+      case 'umbrella_rounded': return Icons.umbrella_rounded;
+      case 'sentiment_dissatisfied_rounded': return Icons.sentiment_dissatisfied_rounded;
+      default: return Icons.card_giftcard_rounded;
+    }
+  }
 
   @override
   void initState() {
-    super.initState() ; {
-      _animationController = AnimationController(
-        vsync: this,
-        duration: const Duration(seconds: 4), // Durasi putaran roda berputar
-      );
+    super.initState();
+    _animationController = AnimationController(
+      vsync: this,
+      duration: const Duration(seconds: 4),
+    );
 
-      _animation = CurvedAnimation(
-        parent: _animationController,
-        curve: Curves.easeOutCubic, // Efek putaran melambat di akhir secara natural
-      );
+    _animation = CurvedAnimation(
+      parent: _animationController,
+      curve: Curves.easeOutCubic,
+    );
+
+    _loadData();
+  }
+
+  Future<void> _loadData() async {
+    try {
+      final info = await ApiService.getLuckySpinInfo();
+      final prizesData = info['prizes'] as List<dynamic>;
+      setState(() {
+        _prizes = prizesData.map((e) => LuckySpinPrize.fromJson(e)).toList();
+        userPoints = info['user_points'];
+        pointsRequired = info['points_required'];
+        _isLoading = false;
+      });
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Gagal memuat data')));
     }
   }
 
@@ -53,7 +75,7 @@ class _LuckySpinScreenState extends State<LuckySpinScreen> with SingleTickerProv
     super.dispose();
   }
 
-  void _startLuckySpin() {
+  Future<void> _startLuckySpin() async {
     if (_isSpinning) return;
 
     if (userPoints < pointsRequired) {
@@ -69,26 +91,38 @@ class _LuckySpinScreenState extends State<LuckySpinScreen> with SingleTickerProv
 
     setState(() {
       _isSpinning = true;
-      // Memilih indeks hadiah secara acak
-      _selectedPrizeIndex = Random().nextInt(_prizes.length);
     });
 
-    // Menghitung rotasi: beberapa putaran penuh ditambah sudut target hadiah
-    double prizeAngle = (360 / _prizes.length) * _selectedPrizeIndex;
-    double totalRotation = (360 * 5) + prizeAngle; // 5 kali putaran penuh + target
+    try {
+      final res = await ApiService.doLuckySpin();
+      final selectedPrizeId = res['prize']['id'];
+      
+      int foundIndex = _prizes.indexWhere((p) => p.id == selectedPrizeId);
+      if (foundIndex == -1) foundIndex = 0; // Fallback
 
-    _animationController.reset();
-    _animation = Tween<double>(begin: 0, end: totalRotation * (pi / 180)).animate(
-      CurvedAnimation(parent: _animationController, curve: Curves.easeOutCubic),
-    );
+      _selectedPrizeIndex = foundIndex;
 
-    _animationController.forward().then((_) {
-      _showPrizeDialog(_prizes[_selectedPrizeIndex]['title']);
+      double prizeAngle = (360 / _prizes.length) * _selectedPrizeIndex;
+      double totalRotation = (360 * 5) + prizeAngle; 
+
+      _animationController.reset();
+      _animation = Tween<double>(begin: 0, end: totalRotation * (pi / 180)).animate(
+        CurvedAnimation(parent: _animationController, curve: Curves.easeOutCubic),
+      );
+
+      _animationController.forward().then((_) {
+        _showPrizeDialog(_prizes[_selectedPrizeIndex].title);
+        setState(() {
+          userPoints = res['user_points'];
+          _isSpinning = false;
+        });
+      });
+    } catch (e) {
       setState(() {
-        userPoints -= pointsRequired; // Potong poin pengguna setelah spin berhasil
         _isSpinning = false;
       });
-    });
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.toString())));
+    }
   }
 
   void _showPrizeDialog(String prizeTitle) {
@@ -144,13 +178,14 @@ class _LuckySpinScreenState extends State<LuckySpinScreen> with SingleTickerProv
           onPressed: () => Navigator.pop(context),
         ),
       ),
-      body: Center(
+      body: _isLoading 
+        ? const Center(child: CircularProgressIndicator(color: Color(0xFF7A58E6)))
+        : Center(
         child: SingleChildScrollView(
           padding: const EdgeInsets.all(24.0),
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              // Info Poin User saat ini
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
                 decoration: BoxDecoration(
@@ -177,7 +212,6 @@ class _LuckySpinScreenState extends State<LuckySpinScreen> with SingleTickerProv
               ),
               const SizedBox(height: 40),
 
-              // Komponen Roda Berputar (Lucky Spin Wheel)
               Stack(
                 alignment: Alignment.center,
                 children: [
@@ -209,7 +243,7 @@ class _LuckySpinScreenState extends State<LuckySpinScreen> with SingleTickerProv
                                     child: RotatedBox(
                                       quarterTurns: 1,
                                       child: Icon(
-                                        _prizes[index]['icon'],
+                                        _getIconData(_prizes[index].icon),
                                         color: index % 2 == 0 ? const Color(0xFF7A58E6) : const Color(0xFF8F6EFA),
                                         size: 28,
                                       ),
@@ -223,7 +257,6 @@ class _LuckySpinScreenState extends State<LuckySpinScreen> with SingleTickerProv
                       );
                     },
                   ),
-                  // Jarum penunjuk bagian atas roda
                   Positioned(
                     top: 0,
                     child: Container(
@@ -235,7 +268,6 @@ class _LuckySpinScreenState extends State<LuckySpinScreen> with SingleTickerProv
                       ),
                     ),
                   ),
-                  // Pusat poros roda berputar
                   Container(
                     width: 44,
                     height: 44,
@@ -246,7 +278,6 @@ class _LuckySpinScreenState extends State<LuckySpinScreen> with SingleTickerProv
               ),
               const SizedBox(height: 50),
 
-              // Tombol Mainkan / Spin
               SizedBox(
                 width: 220,
                 height: 54,
@@ -258,7 +289,7 @@ class _LuckySpinScreenState extends State<LuckySpinScreen> with SingleTickerProv
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                     elevation: 0,
                   ),
-                  onPressed: _isSpinning ? null : _startLuckySpin,
+                  onPressed: _isSpinning || _prizes.isEmpty ? null : _startLuckySpin,
                   child: _isSpinning
                       ? const SizedBox(width: 24, height: 24, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2.5))
                       : const Text('Putar Sekarang', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),

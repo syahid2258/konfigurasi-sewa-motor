@@ -59,3 +59,7 @@ Route::get('app-info/{type}', [AppInfoController::class, 'show']);
 Route::get('user', [UserController::class, 'show']);
 Route::put('user', [UserController::class, 'update']);
 Route::post('user/change-password', [UserController::class, 'changePassword']);
+
+// --- LUCKY SPIN ---
+Route::get('lucky-spin/info', [\App\Http\Controllers\LuckySpinController::class, 'info']);
+Route::post('lucky-spin/spin', [\App\Http\Controllers\LuckySpinController::class, 'spin']);

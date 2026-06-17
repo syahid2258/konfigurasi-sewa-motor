@@ -5,6 +5,7 @@ import 'main_screen.dart';
 import 'riwayat_screen.dart';
 import 'profil_screen.dart';
 import 'chat_room_screen.dart'; // Menghubungkan ke halaman Chat Room Detail
+import 'lucky_spin_screen.dart';
 
 class PesanScreen extends StatefulWidget {
   const PesanScreen({super.key});
@@ -20,6 +21,7 @@ class _PesanScreenState extends State<PesanScreen> {
 
   bool _isLoading = true;
   List<Message> listPesan = [];
+  int userPoints = 0;
 
   @override
   void initState() {
@@ -30,9 +32,15 @@ class _PesanScreenState extends State<PesanScreen> {
   Future<void> _loadMessages() async {
     try {
       setState(() => _isLoading = true);
-      final data = await ApiService.getMessages();
+      final results = await Future.wait([
+        ApiService.getMessages(),
+        ApiService.getUser(),
+      ]);
+      final data = results[0] as List<dynamic>;
+      final user = results[1] as Map<String, dynamic>;
       setState(() {
         listPesan = data.map((e) => Message.fromJson(e as Map<String, dynamic>)).toList();
+        userPoints = user['points'] ?? 0;
         _isLoading = false;
       });
     } catch (e) {
@@ -147,6 +155,7 @@ class _PesanScreenState extends State<PesanScreen> {
           children: [
             _buildNavItem(0, Icons.home_rounded, 'Beranda', primaryPurple),
             _buildNavItem(1, Icons.calendar_month_rounded, 'Booking', primaryPurple),
+            _buildLuckySpinItem(),
             _buildNavItem(2, Icons.chat_bubble_rounded, 'Pesan', primaryPurple), // Aktif
             _buildNavItem(3, Icons.person_outline_rounded, 'Profil', primaryPurple),
           ],
@@ -343,4 +352,53 @@ class _PesanScreenState extends State<PesanScreen> {
       ),
     );
   }
-}
+
+  // Widget helper khusus untuk tombol Lucky Spin di tengah
+  Widget _buildLuckySpinItem() {
+    bool isPointsEnough = userPoints >= 1000; 
+    return GestureDetector(
+      onTap: () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => const LuckySpinScreen(),
+          ),
+        );
+      },
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 250),
+        curve: Curves.easeInOut,
+        color: Colors.transparent,
+        padding: const EdgeInsets.symmetric(horizontal: 12.0),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              padding: const EdgeInsets.all(6),
+              decoration: BoxDecoration(
+                color: isPointsEnough 
+                    ? const Color(0xFF7A58E6).withOpacity(0.12)
+                    : Colors.grey.shade200,
+                shape: BoxShape.circle,
+              ),
+              child: Icon(
+                isPointsEnough ? Icons.stars_rounded : Icons.lock_outline_rounded, 
+                color: isPointsEnough ? const Color(0xFF7A58E6) : Colors.grey.shade500,
+                size: 24,
+              ),
+            ),
+            const SizedBox(height: 4),
+            Text(
+              'Lucky Spin',
+              style: TextStyle(
+                fontSize: 11,
+                fontWeight: FontWeight.w500,
+                color: isPointsEnough ? const Color(0xFF2D3142) : Colors.grey.shade400,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
