@@ -562,41 +562,43 @@ class _MainScreenState extends State<MainScreen> {
   // Widget helper untuk Bottom Navigation
   Widget _buildNavItem(int index, IconData icon, String label) {
     bool isSelected = _selectedIndex == index;
-    return GestureDetector(
-      onTap: () {
-        if (index == 0) {
-          setState(() => _selectedIndex = 0);
-        } else if (index == 1) {
-          Navigator.push(context, MaterialPageRoute(builder: (context) => const RiwayatScreen()));
-        } else if (index == 2) {
-          Navigator.push(context, MaterialPageRoute(builder: (context) => const PesanScreen()));
-        } else if (index == 3) {
-          Navigator.push(context, MaterialPageRoute(builder: (context) => const ProfilScreen()));
-        }
-      },
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 250),
-        curve: Curves.easeInOut,
-        color: Colors.transparent, // Menjamin seluruh area icon+teks bisa di-tap
-        padding: const EdgeInsets.symmetric(horizontal: 16.0),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(
-              icon,
-              color: isSelected ? const Color(0xFF7A58E6) : Colors.grey.shade400,
-              size: 26,
-            ),
-            const SizedBox(height: 4),
-            Text(
-              label,
-              style: TextStyle(
-                fontSize: 11,
-                fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
+    return Expanded(
+      child: GestureDetector(
+        onTap: () {
+          if (index == 0) {
+            setState(() => _selectedIndex = 0);
+          } else if (index == 1) {
+            Navigator.push(context, MaterialPageRoute(builder: (context) => const RiwayatScreen()));
+          } else if (index == 2) {
+            Navigator.push(context, MaterialPageRoute(builder: (context) => const PesanScreen()));
+          } else if (index == 3) {
+            Navigator.push(context, MaterialPageRoute(builder: (context) => const ProfilScreen()));
+          }
+        },
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 250),
+          curve: Curves.easeInOut,
+          color: Colors.transparent, // Menjamin seluruh area icon+teks bisa di-tap
+          padding: const EdgeInsets.symmetric(horizontal: 0.0),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(
+                icon,
                 color: isSelected ? const Color(0xFF7A58E6) : Colors.grey.shade400,
+                size: 26,
               ),
-            ),
-          ],
+              const SizedBox(height: 4),
+              Text(
+                label,
+                style: TextStyle(
+                  fontSize: 11,
+                  fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
+                  color: isSelected ? const Color(0xFF7A58E6) : Colors.grey.shade400,
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
