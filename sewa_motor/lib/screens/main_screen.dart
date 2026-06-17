@@ -7,6 +7,7 @@ import 'profil_screen.dart';
 import 'pesan_screen.dart'; 
 import 'katalog_screen.dart';
 import 'notifikasi_screen.dart';
+import 'lucky_spin_screen.dart';
 
 class MainScreen extends StatefulWidget {
   const MainScreen({super.key});
@@ -17,6 +18,7 @@ class MainScreen extends StatefulWidget {
 
 class _MainScreenState extends State<MainScreen> {
   int _selectedIndex = 0;
+  int userPoints = 1200;
   final FocusNode _searchFocusNode = FocusNode();
   final TextEditingController _searchController = TextEditingController();
 
@@ -502,6 +504,7 @@ class _MainScreenState extends State<MainScreen> {
           children: [
             _buildNavItem(0, Icons.home_rounded, 'Beranda'),
             _buildNavItem(1, Icons.calendar_month_rounded, 'Booking'),
+            _buildLuckySpinItem(),
             _buildNavItem(2, Icons.chat_bubble_outline_rounded, 'Pesan'),
             _buildNavItem(3, Icons.person_outline_rounded, 'Profil'),
           ],
@@ -601,4 +604,56 @@ class _MainScreenState extends State<MainScreen> {
       ),
     );
   }
+ // Widget helper khusus untuk tombol Lucky Spin di tengah
+ Widget _buildLuckySpinItem() {
+    // Tentukan apakah poin cukup untuk melakukan spin (misal batasnya 1000)
+    bool isPointsEnough = userPoints >= 1000; 
+
+    return GestureDetector(
+      onTap: () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => LuckySpinScreen(),
+          ),
+        );
+      },
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 250),
+        curve: Curves.easeInOut,
+        color: Colors.transparent,
+        padding: const EdgeInsets.symmetric(horizontal: 12.0),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              padding: const EdgeInsets.all(6),
+              decoration: BoxDecoration(
+                // Jika poin kurang, beri warna abu-abu tipis. Jika cukup, beri warna ungu transparan.
+                color: isPointsEnough 
+                    ? const Color(0xFF7A58E6).withOpacity(0.12)
+                    : Colors.grey.shade200,
+                shape: BoxShape.circle,
+              ),
+              child: Icon(
+                // Jika poin kurang, tampilkan ikon gembok/bintang redup
+                isPointsEnough ? Icons.stars_rounded : Icons.lock_outline_rounded, 
+                color: isPointsEnough ? const Color(0xFF7A58E6) : Colors.grey.shade500,
+                size: 24,
+              ),
+            ),
+            const SizedBox(height: 4),
+            Text(
+              'Lucky Spin',
+              style: TextStyle(
+                fontSize: 11,
+                fontWeight: FontWeight.w500,
+                color: isPointsEnough ? const Color(0xFF2D3142) : Colors.grey.shade400,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+ }
 }
